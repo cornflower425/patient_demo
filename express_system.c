@@ -9,179 +9,197 @@
 #define MAX_ID_LEN 20
 #define MAX_ADDRESS_LEN 100
 
-// 快递信息结构体
+// next_serial used for express ID generation (initialized when loading data)
+static int next_serial = 0;
+
+// Express struct
 typedef struct {
-    char id[MAX_ID_LEN];              // 快递ID
-    char recipient_name[MAX_NAME_LEN]; // 收件人姓名
-    char phone[MAX_PHONE_LEN];         // 收件人电话
-    char sender[MAX_NAME_LEN];         // 寄件人
-    char address[MAX_ADDRESS_LEN];     // 收货地址
-    char receive_time[30];             // 收货时间
-    int is_received;                   // 是否已领取 (0-未领取, 1-已领取)
-    char pickup_time[30];              // 领取时间
+    char id[MAX_ID_LEN];              // express ID
+    char recipient_name[MAX_NAME_LEN]; // recipient name
+    char phone[MAX_PHONE_LEN];         // recipient phone
+    char sender[MAX_NAME_LEN];         // sender
+    char address[MAX_ADDRESS_LEN];     // address
+    char receive_time[30];             // receive time
+    int is_received;                   // received flag (0-not received, 1-received)
+    char pickup_time[30];              // pickup time
 } Express;
 
-// 全局快递数据库
+// global express database
 Express express_db[MAX_EXPRESS];
 int express_count = 0;
 
-// 获取当前时间
+// get current time
 void get_current_time(char *buffer) {
     time_t now = time(NULL);
     struct tm *timeinfo = localtime(&now);
     strftime(buffer, 30, "%Y-%m-%d %H:%M:%S", timeinfo);
 }
 
-// 生成快递ID
+// generate express ID
 void generate_express_id(char *id) {
-    static int serial = 0;
-    sprintf(id, "EXP%06d", ++serial);
+    sprintf(id, "EXP%06d", ++next_serial);
 }
 
-// 添加快递
+// read a line from stdin and strip trailing newline
+void read_line(char *buffer, int size) {
+    if (fgets(buffer, size, stdin) == NULL) {
+        buffer[0] = '\0';
+        return;
+    }
+    size_t len = strlen(buffer);
+    if (len > 0 && buffer[len - 1] == '\n') {
+        buffer[len - 1] = '\0';
+    }
+}
+
+// add express
 void add_express() {
     if (express_count >= MAX_EXPRESS) {
-        printf("快递库已满！\n");
+        printf("Express database full!\n");
         return;
     }
 
     Express new_express;
     
-    printf("\n========== 添加快递 ==========\n");
+    printf("\n========== Add Express ==========\n");
     
     generate_express_id(new_express.id);
-    printf("快递ID: %s\n", new_express.id);
+    printf("Express ID: %s\n", new_express.id);
     
-    printf("收件人姓名: ");
-    scanf("%s", new_express.recipient_name);
-    
-    printf("收件人电话: ");
-    scanf("%s", new_express.phone);
-    
-    printf("寄件人: ");
-    scanf("%s", new_express.sender);
-    
-    printf("收货地址: ");
-    scanf("%s", new_express.address);
+    printf("Recipient name: ");
+    read_line(new_express.recipient_name, MAX_NAME_LEN);
+
+    printf("Recipient phone: ");
+    read_line(new_express.phone, MAX_PHONE_LEN);
+
+    printf("Sender: ");
+    read_line(new_express.sender, MAX_NAME_LEN);
+
+    printf("Address: ");
+    read_line(new_express.address, MAX_ADDRESS_LEN);
     
     get_current_time(new_express.receive_time);
     new_express.is_received = 0;
-    strcpy(new_express.pickup_time, "未领取");
+    strcpy(new_express.pickup_time, "Not received");
     
     express_db[express_count++] = new_express;
-    printf("✓ 快递添加成功！\n");
+    printf("Express added successfully!\n");
 }
 
-// 查询快递
+// query express
 void query_express() {
-    printf("\n========== 查询快递 ==========\n");
-    printf("1. 按快递ID查询\n");
-    printf("2. 按收件人姓名查询\n");
-    printf("3. 查询所有快递\n");
-    printf("请选择: ");
+    printf("\n========== Query Express ==========\n");
+    printf("1. Query by Express ID\n");
+    printf("2. Query by Recipient name\n");
+    printf("3. List all expresses\n");
+    printf("Select: ");
     
-    int choice;
-    scanf("%d", &choice);
+    int choice = 0;
+    char buf[32];
+    read_line(buf, sizeof(buf));
+    if (sscanf(buf, "%d", &choice) != 1) choice = 0;
     
     if (choice == 1) {
         char id[MAX_ID_LEN];
-        printf("请输入快递ID: ");
-        scanf("%s", id);
+        printf("Enter express ID: ");
+        read_line(id, MAX_ID_LEN);
         
         for (int i = 0; i < express_count; i++) {
             if (strcmp(express_db[i].id, id) == 0) {
-                printf("\n快递ID: %s\n", express_db[i].id);
-                printf("收件人: %s\n", express_db[i].recipient_name);
-                printf("电话: %s\n", express_db[i].phone);
-                printf("寄件人: %s\n", express_db[i].sender);
-                printf("地址: %s\n", express_db[i].address);
-                printf("收货时间: %s\n", express_db[i].receive_time);
-                printf("领取状态: %s\n", express_db[i].is_received ? "已领取" : "未领取");
+                printf("\nExpress ID: %s\n", express_db[i].id);
+                printf("Recipient: %s\n", express_db[i].recipient_name);
+                printf("Phone: %s\n", express_db[i].phone);
+                printf("Sender: %s\n", express_db[i].sender);
+                printf("Address: %s\n", express_db[i].address);
+                printf("Receive time: %s\n", express_db[i].receive_time);
+                const char *status = express_db[i].is_received ? "Received" : "Not received";
+                printf("Status: %s\n", status);
                 if (express_db[i].is_received) {
-                    printf("领取时间: %s\n", express_db[i].pickup_time);
+                    printf("Pickup time: %s\n", express_db[i].pickup_time);
                 }
                 return;
             }
         }
-        printf("未找到该快递！\n");
+        printf("Express not found!\n");
         
     } else if (choice == 2) {
         char name[MAX_NAME_LEN];
-        printf("请输入收件人姓名: ");
-        scanf("%s", name);
+        printf("Enter recipient name: ");
+        read_line(name, MAX_NAME_LEN);
         
         int found = 0;
         for (int i = 0; i < express_count; i++) {
             if (strcmp(express_db[i].recipient_name, name) == 0) {
-                printf("\n快递ID: %s\n", express_db[i].id);
-                printf("收件人: %s\n", express_db[i].recipient_name);
-                printf("电话: %s\n", express_db[i].phone);
-                printf("寄件人: %s\n", express_db[i].sender);
-                printf("地址: %s\n", express_db[i].address);
-                printf("收货时间: %s\n", express_db[i].receive_time);
-                printf("领取状态: %s\n", express_db[i].is_received ? "已领取" : "未领取");
+                printf("\nExpress ID: %s\n", express_db[i].id);
+                printf("Recipient: %s\n", express_db[i].recipient_name);
+                printf("Phone: %s\n", express_db[i].phone);
+                printf("Sender: %s\n", express_db[i].sender);
+                printf("Address: %s\n", express_db[i].address);
+                printf("Receive time: %s\n", express_db[i].receive_time);
+                printf("Status: %s\n", express_db[i].is_received ? "Received" : "Not received");
                 printf("---\n");
                 found = 1;
             }
         }
-        if (!found) printf("未找到该收件人的快递！\n");
+        if (!found) printf("No expresses found for that recipient!\n");
         
     } else if (choice == 3) {
         if (express_count == 0) {
-            printf("暂无快递！\n");
+            printf("No expresses!\n");
             return;
         }
-        
-        printf("\n%-12s %-12s %-15s %-15s %-15s\n", "快递ID", "收件人", "电话", "状态", "收货时间");
+
+        printf("\n%-12s %-12s %-15s %-15s %-15s\n", "ExpressID", "Recipient", "Phone", "Status", "ReceiveTime");
         printf("================================================================================\n");
         for (int i = 0; i < express_count; i++) {
+            const char *status = express_db[i].is_received ? "Received" : "Not received";
             printf("%-12s %-12s %-15s %-15s %-15s\n",
                    express_db[i].id,
                    express_db[i].recipient_name,
                    express_db[i].phone,
-                   express_db[i].is_received ? "已领取" : "未领取",
+                   status,
                    express_db[i].receive_time);
         }
     } else {
-        printf("选择错误！\n");
+        printf("Invalid selection!\n");
     }
 }
 
 // 标记快递为已领取
 void mark_as_received() {
-    printf("\n========== 标记领取 ==========\n");
+    printf("\n========== Mark as Received ==========\n");
     char id[MAX_ID_LEN];
-    printf("请输入快递ID: ");
-    scanf("%s", id);
+    printf("Enter express ID: ");
+    read_line(id, MAX_ID_LEN);
     
     for (int i = 0; i < express_count; i++) {
         if (strcmp(express_db[i].id, id) == 0) {
             if (express_db[i].is_received) {
-                printf("该快递已经被领取！\n");
+                printf("This express was already received!\n");
                 return;
             }
             express_db[i].is_received = 1;
             get_current_time(express_db[i].pickup_time);
-            printf("✓ 已标记为领取！\n");
-            printf("领取人: %s\n", express_db[i].recipient_name);
-            printf("领取时间: %s\n", express_db[i].pickup_time);
+            printf("Marked as received!\n");
+            printf("Recipient: %s\n", express_db[i].recipient_name);
+            printf("Pickup time: %s\n", express_db[i].pickup_time);
             return;
         }
     }
-    printf("未找到该快递！\n");
+    printf("Express not found!\n");
 }
 
 // 删除已领取的快递
 void delete_express() {
-    printf("\n========== 删除快递 ==========\n");
+    printf("\n========== Delete Express ==========\n");
     char id[MAX_ID_LEN];
-    printf("请输入要删除的快递ID: ");
-    scanf("%s", id);
+    printf("Enter express ID to delete: ");
+    read_line(id, MAX_ID_LEN);
     
     for (int i = 0; i < express_count; i++) {
         if (strcmp(express_db[i].id, id) == 0) {
             if (!express_db[i].is_received) {
-                printf("只能删除已领取的快递！\n");
+                printf("Can only delete received expresses!\n");
                 return;
             }
             
@@ -190,16 +208,16 @@ void delete_express() {
                 express_db[j] = express_db[j + 1];
             }
             express_count--;
-            printf("✓ 快递已删除！\n");
+            printf("Express deleted!\n");
             return;
         }
     }
-    printf("未找到该快递！\n");
+    printf("Express not found!\n");
 }
 
 // 统计快递信息
 void statistics() {
-    printf("\n========== 快递统计 ==========\n");
+    printf("\n========== Express Statistics ==========\n");
     
     int total = express_count;
     int received = 0;
@@ -210,24 +228,24 @@ void statistics() {
         }
     }
     
-    printf("快递总数: %d\n", total);
-    printf("已领取: %d\n", received);
-    printf("未领取: %d\n", total - received);
-    printf("领取率: %.2f%%\n", total > 0 ? (received * 100.0 / total) : 0);
+    printf("Total expresses: %d\n", total);
+    printf("Received: %d\n", received);
+    printf("Not received: %d\n", total - received);
+    printf("Pickup rate: %.2f%%\n", total > 0 ? (received * 100.0 / total) : 0);
 }
 
 // 保存数据到文件
 void save_to_file() {
     FILE *fp = fopen("express_data.dat", "wb");
     if (fp == NULL) {
-        printf("无法打开文件！\n");
+        printf("Unable to open file!\n");
         return;
     }
     
     fwrite(&express_count, sizeof(int), 1, fp);
     fwrite(express_db, sizeof(Express), express_count, fp);
     fclose(fp);
-    printf("✓ 数据已保存！\n");
+    printf("Data saved!\n");
 }
 
 // 从文件加载数据
@@ -237,26 +255,48 @@ void load_from_file() {
         return;
     }
     
-    fread(&express_count, sizeof(int), 1, fp);
-    fread(express_db, sizeof(Express), express_count, fp);
+    // 读取快递数量并做基本校验
+    if (fread(&express_count, sizeof(int), 1, fp) != 1) {
+        fclose(fp);
+        express_count = 0;
+        return;
+    }
+    if (express_count < 0 || express_count > MAX_EXPRESS) {
+        // 数据异常，重置
+        express_count = 0;
+        fclose(fp);
+        return;
+    }
+    if (fread(express_db, sizeof(Express), express_count, fp) != (size_t)express_count) {
+        // 读取失败，重置
+        express_count = 0;
+        fclose(fp);
+        return;
+    }
+    // 初始化 next_serial，确保生成的ID不会重复
+    next_serial = 0;
+    for (int i = 0; i < express_count; i++) {
+        // 快递ID 格式 EXP######，尝试解析序号
+        int num = 0;
+        if (sscanf(express_db[i].id, "EXP%d", &num) == 1) {
+            if (num > next_serial) next_serial = num;
+        }
+    }
     fclose(fp);
 }
 
 // 显示菜单
 void display_menu() {
     printf("\n");
-    printf("╔════════════════════════════════════╗\n");
-    printf("║     校园快递代收管理系统           ║\n");
-    printf("╠════════════════════════════════════╣\n");
-    printf("║  1. 添加快递                       ║\n");
-    printf("║  2. 查询快递                       ║\n");
-    printf("║  3. 标记为已领取                   ║\n");
-    printf("║  4. 删除快递                       ║\n");
-    printf("║  5. 统计信息                       ║\n");
-    printf("║  6. 保存数据                       ║\n");
-    printf("║  0. 退出系统                       ║\n");
-    printf("╚════════════════════════════════════╝\n");
-    printf("请选择操作 (0-6): ");
+    printf("================ Express Management System ================\n");
+    printf(" 1. Add express\n");
+    printf(" 2. Query express\n");
+    printf(" 3. Mark as received\n");
+    printf(" 4. Delete express\n");
+    printf(" 5. Statistics\n");
+    printf(" 6. Save data\n");
+    printf(" 0. Exit\n");
+    printf("Select (0-6): ");
 }
 
 // 主函数
@@ -267,7 +307,11 @@ int main() {
     
     while (1) {
         display_menu();
-        scanf("%d", &choice);
+        char buf[32];
+        read_line(buf, sizeof(buf));
+        if (sscanf(buf, "%d", &choice) != 1) {
+            choice = -1;
+        }
         
         switch (choice) {
             case 1:
@@ -289,7 +333,7 @@ int main() {
                 save_to_file();
                 break;
             case 0:
-                printf("感谢使用，再见！\n");
+                printf("Thank you, goodbye!\n");
                 save_to_file();
                 return 0;
             default:
