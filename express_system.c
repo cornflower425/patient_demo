@@ -42,8 +42,7 @@ void get_current_time(char *buffer, size_t size) {
     struct tm *timeinfo = localtime(&now);
     
     if (timeinfo == NULL) {
-        strncpy(buffer, "Unknown", size - 1);
-        buffer[size - 1] = '\0';
+        snprintf(buffer, size, "%s", "Unknown");
         return;
     }
     
@@ -82,8 +81,7 @@ void safe_strcpy(char *dest, const char *src, size_t dest_size) {
         return;
     }
     
-    strncpy(dest, src, dest_size - 1);
-    dest[dest_size - 1] = '\0';
+    snprintf(dest, dest_size, "%s", src);
 }
 
 // print express details
@@ -125,7 +123,7 @@ void add_express(void) {
     Express new_express;
     memset(&new_express, 0, sizeof(Express));
     
-    printf("\n========== 添加快递 ==========\n");
+    printf("\n========== 添��快递 ==========\n");
     
     generate_express_id(new_express.id, sizeof(new_express.id));
     printf("快递编号: %s\n", new_express.id);
@@ -164,7 +162,7 @@ void add_express(void) {
     
     get_current_time(new_express.receive_time, sizeof(new_express.receive_time));
     new_express.is_received = 0;
-    safe_strcpy(new_express.pickup_time, "未领取", sizeof(new_express.pickup_time));
+    safe_strcpy(new_express.pickup_time, "��领取", sizeof(new_express.pickup_time));
     
     express_db[express_count++] = new_express;
     printf("快递已添加！\n");
@@ -343,7 +341,7 @@ void statistics(void) {
     printf("快递总数: %d\n", total);
     printf("已领取: %d\n", received);
     printf("未领取: %d\n", total - received);
-    printf("领取率: %.2f%%\n", total > 0 ? (received * 100.0 / total) : 0);
+    printf("领取率: %.2f%%\n", total > 0 ? (received * 100.0 / total) : 0.0);
 }
 
 // save data to file
