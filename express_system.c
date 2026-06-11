@@ -1,3 +1,6 @@
+#define _CRT_SECURE_NO_WARNINGS
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +34,9 @@ int express_count = 0;
 
 // get current time (safe version)
 void get_current_time(char *buffer, size_t size) {
-    if (buffer == NULL || size == 0) return;
+    if (buffer == NULL || size == 0) {
+        return;
+    }
     
     time_t now = time(NULL);
     struct tm *timeinfo = localtime(&now);
@@ -47,14 +52,18 @@ void get_current_time(char *buffer, size_t size) {
 
 // generate express ID (safe version)
 void generate_express_id(char *id, size_t size) {
-    if (id == NULL || size < 10) return;
+    if (id == NULL || size < 10) {
+        return;
+    }
     
     snprintf(id, size, "EXP%06d", ++next_serial);
 }
 
 // read a line from stdin and strip trailing newline (safe version)
 void read_line(char *buffer, int size) {
-    if (buffer == NULL || size <= 0) return;
+    if (buffer == NULL || size <= 0) {
+        return;
+    }
     
     if (fgets(buffer, size, stdin) == NULL) {
         buffer[0] = '\0';
@@ -69,7 +78,9 @@ void read_line(char *buffer, int size) {
 
 // safe string copy function
 void safe_strcpy(char *dest, const char *src, size_t dest_size) {
-    if (dest == NULL || src == NULL || dest_size == 0) return;
+    if (dest == NULL || src == NULL || dest_size == 0) {
+        return;
+    }
     
     strncpy(dest, src, dest_size - 1);
     dest[dest_size - 1] = '\0';
@@ -77,7 +88,9 @@ void safe_strcpy(char *dest, const char *src, size_t dest_size) {
 
 // print express details
 void print_express(const Express *express) {
-    if (express == NULL) return;
+    if (express == NULL) {
+        return;
+    }
     
     printf("快递编号: %s\n", express->id);
     printf("收件人: %s\n", express->recipient_name);
@@ -94,8 +107,16 @@ void print_express(const Express *express) {
     }
 }
 
+// validate input string
+int is_empty_input(const char *str) {
+    if (str == NULL || strlen(str) == 0) {
+        return 1;
+    }
+    return 0;
+}
+
 // add express
-void add_express() {
+void add_express(void) {
     if (express_count >= MAX_EXPRESS) {
         printf("快递数据库已满！\n");
         return;
@@ -110,33 +131,33 @@ void add_express() {
     printf("快递编号: %s\n", new_express.id);
     
     printf("收件人姓名: ");
-    read_line(new_express.recipient_name, sizeof(new_express.recipient_name));
+    read_line(new_express.recipient_name, (int)sizeof(new_express.recipient_name));
     
-    if (strlen(new_express.recipient_name) == 0) {
+    if (is_empty_input(new_express.recipient_name)) {
         printf("收件人姓名不能为空！\n");
         return;
     }
 
     printf("收件人电话: ");
-    read_line(new_express.phone, sizeof(new_express.phone));
+    read_line(new_express.phone, (int)sizeof(new_express.phone));
     
-    if (strlen(new_express.phone) == 0) {
+    if (is_empty_input(new_express.phone)) {
         printf("收件人电话不能为空！\n");
         return;
     }
 
     printf("寄件人: ");
-    read_line(new_express.sender, sizeof(new_express.sender));
+    read_line(new_express.sender, (int)sizeof(new_express.sender));
     
-    if (strlen(new_express.sender) == 0) {
+    if (is_empty_input(new_express.sender)) {
         printf("寄件人不能为空！\n");
         return;
     }
 
     printf("地址: ");
-    read_line(new_express.address, sizeof(new_express.address));
+    read_line(new_express.address, (int)sizeof(new_express.address));
     
-    if (strlen(new_express.address) == 0) {
+    if (is_empty_input(new_express.address)) {
         printf("地址不能为空！\n");
         return;
     }
@@ -150,12 +171,12 @@ void add_express() {
 }
 
 // query express by id
-void query_by_id() {
+void query_by_id(void) {
     char id[MAX_ID_LEN];
     printf("请输入快递编号: ");
-    read_line(id, sizeof(id));
+    read_line(id, (int)sizeof(id));
     
-    if (strlen(id) == 0) {
+    if (is_empty_input(id)) {
         printf("快递编号不能为空！\n");
         return;
     }
@@ -171,12 +192,12 @@ void query_by_id() {
 }
 
 // query express by name
-void query_by_name() {
+void query_by_name(void) {
     char name[MAX_NAME_LEN];
     printf("请输入收件人姓名: ");
-    read_line(name, sizeof(name));
+    read_line(name, (int)sizeof(name));
     
-    if (strlen(name) == 0) {
+    if (is_empty_input(name)) {
         printf("收件人姓名不能为空！\n");
         return;
     }
@@ -190,11 +211,13 @@ void query_by_name() {
             found = 1;
         }
     }
-    if (!found) printf("未找到该收件人的快递！\n");
+    if (!found) {
+        printf("未找到该收件人的快递！\n");
+    }
 }
 
 // list all express
-void list_all_express() {
+void list_all_express(void) {
     if (express_count == 0) {
         printf("暂无快递！\n");
         return;
@@ -215,7 +238,7 @@ void list_all_express() {
 }
 
 // query express
-void query_express() {
+void query_express(void) {
     printf("\n========== 查询快递 ==========\n");
     printf("1. 按快递编号查询\n");
     printf("2. 按收件人姓名查询\n");
@@ -224,8 +247,10 @@ void query_express() {
     
     int choice = 0;
     char buf[32];
-    read_line(buf, sizeof(buf));
-    if (sscanf(buf, "%d", &choice) != 1) choice = 0;
+    read_line(buf, (int)sizeof(buf));
+    if (sscanf(buf, "%d", &choice) != 1) {
+        choice = 0;
+    }
     
     switch (choice) {
         case 1:
@@ -243,13 +268,13 @@ void query_express() {
 }
 
 // mark express as received
-void mark_as_received() {
+void mark_as_received(void) {
     printf("\n========== 标记为已领取 ==========\n");
     char id[MAX_ID_LEN];
     printf("请输入快递编号: ");
-    read_line(id, sizeof(id));
+    read_line(id, (int)sizeof(id));
     
-    if (strlen(id) == 0) {
+    if (is_empty_input(id)) {
         printf("快递编号不能为空！\n");
         return;
     }
@@ -272,13 +297,13 @@ void mark_as_received() {
 }
 
 // delete express
-void delete_express() {
+void delete_express(void) {
     printf("\n========== 删除快递 ==========\n");
     char id[MAX_ID_LEN];
     printf("请输入要删除的快递编号: ");
-    read_line(id, sizeof(id));
+    read_line(id, (int)sizeof(id));
     
-    if (strlen(id) == 0) {
+    if (is_empty_input(id)) {
         printf("快递编号不能为空！\n");
         return;
     }
@@ -303,7 +328,7 @@ void delete_express() {
 }
 
 // statistics
-void statistics() {
+void statistics(void) {
     printf("\n========== 快递统计 ==========\n");
     
     int total = express_count;
@@ -322,7 +347,7 @@ void statistics() {
 }
 
 // save data to file
-void save_to_file() {
+void save_to_file(void) {
     FILE *fp = fopen("express_data.dat", "wb");
     if (fp == NULL) {
         printf("无法打开文件！\n");
@@ -335,7 +360,7 @@ void save_to_file() {
         return;
     }
     
-    if (fwrite(express_db, sizeof(Express), express_count, fp) != (size_t)express_count) {
+    if (fwrite(express_db, sizeof(Express), (size_t)express_count, fp) != (size_t)express_count) {
         printf("写入数据失败！\n");
         fclose(fp);
         return;
@@ -346,7 +371,7 @@ void save_to_file() {
 }
 
 // load data from file
-void load_from_file() {
+void load_from_file(void) {
     FILE *fp = fopen("express_data.dat", "rb");
     if (fp == NULL) {
         return;
@@ -366,7 +391,7 @@ void load_from_file() {
         return;
     }
     
-    if (fread(express_db, sizeof(Express), express_count, fp) != (size_t)express_count) {
+    if (fread(express_db, sizeof(Express), (size_t)express_count, fp) != (size_t)express_count) {
         // read failed, reset
         express_count = 0;
         fclose(fp);
@@ -379,7 +404,9 @@ void load_from_file() {
         // express ID format: EXP######, try to parse serial number
         int num = 0;
         if (sscanf(express_db[i].id, "EXP%d", &num) == 1) {
-            if (num > next_serial) next_serial = num;
+            if (num > next_serial) {
+                next_serial = num;
+            }
         }
     }
     
@@ -387,7 +414,7 @@ void load_from_file() {
 }
 
 // display menu
-void display_menu() {
+void display_menu(void) {
     printf("\n");
     printf("================ 快递管理系统 ================\n");
     printf(" 1. 添加快递\n");
@@ -401,7 +428,7 @@ void display_menu() {
 }
 
 // main function
-int main() {
+int main(void) {
     load_from_file();
     
     int choice;
@@ -409,7 +436,7 @@ int main() {
     while (1) {
         display_menu();
         char buf[32];
-        read_line(buf, sizeof(buf));
+        read_line(buf, (int)sizeof(buf));
         if (sscanf(buf, "%d", &choice) != 1) {
             choice = -1;
         }
